@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "460316917916",
+    "project_id": "homeops-agent-8a1e9",
+    "storage_bucket": "homeops-agent-8a1e9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:460316917916:android:b0cb58e9be09fd710f6d59",
+        "android_client_info": {
+          "package_name": "com.example.home_ops_agent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMdJ9rTAgWDoMv0FzZxweq-1bYdcSzwxs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
