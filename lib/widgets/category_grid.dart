@@ -190,12 +190,14 @@ void _showHealthChecklist(BuildContext context) {
                   children: [
                     const Icon(Icons.document_scanner, color: Colors.blueAccent, size: 30),
                     const SizedBox(width: 15),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Upload Prescription", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        Text("AI will auto-order medicines", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                      ],
+                    SingleChildScrollView(
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("Upload Prescription", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          Text("AI will auto-order medicines", style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        ],
+                      ),
                     ),
                     const Spacer(),
                     IconButton(icon: const Icon(Icons.arrow_forward, color: Colors.white), onPressed: (){})

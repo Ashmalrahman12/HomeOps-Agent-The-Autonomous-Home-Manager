@@ -6,7 +6,6 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:home_ops_agent/config/secrets.dart';
 
 class ProductGenerator {
-  // ⚠️ YOUR API KEY
   static final String _apiKey = geminiApiKey; 
 
   static final List<String> _categories = [
@@ -18,6 +17,7 @@ class ProductGenerator {
   ];
 
   static Future<int> generateNewBatch() async {
+    // Use the 1.5 Flash model (Faster & Cheaper)
     final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: _apiKey);
     int itemsAdded = 0;
     final random = Random();
@@ -50,35 +50,43 @@ class ProductGenerator {
         String jsonText = response.text!.replaceAll('```json', '').replaceAll('```', '').trim();
         List<dynamic> items = jsonDecode(jsonText);
 
-        WriteBatch batch = FirebaseFirestore.instance.batch();
         final collection = FirebaseFirestore.instance.collection('shop_inventory');
 
+        // ⚠️ REMOVED 'BATCH' - We save one by one now!
         for (var item in items) {
           DocumentReference doc = collection.doc();
           String prodName = item['name'];
           
-          // ---------------------------------------------------------
-          // 🚀 THE MAGIC TRICK: AI IMAGE URL GENERATOR
-          // ---------------------------------------------------------
-          // This creates a unique image based on the product name!
-          String uniqueImage = "https://image.pollinations.ai/prompt/realistic%20product%20photo%20of%20$prodName%20isolated%20on%20white%20background?nologo=true";
+          // 1. Encode the URL (Fixes spaces in names)
+          String encodedName = Uri.encodeComponent(prodName);
+          String seed = random.nextInt(100000).toString(); 
+          
+          String uniqueImage = "https://image.pollinations.ai/prompt/realistic%20product%20photo%20of%20$encodedName%20isolated%20on%20white%20background?nologo=true&seed=$seed";
 
-          print("📦 NEW UPLOAD: $prodName"); 
+          print("📦 UPLOADING: $prodName (Waiting 5 seconds for image...)"); 
 
-          batch.set(doc, {
+          // 2. Save IMMEDIATELY (So the UI updates 1 item at a time)
+          await doc.set({
             "name": prodName,
             "price": item['price'],
             "rating": item['rating'],
             "category": item['category'],
-            "image_url": uniqueImage, // <--- SAVING THE UNIQUE IMAGE
+            "image_url": uniqueImage, 
             "keywords": (prodName).toLowerCase().split(' '), 
             "timestamp": FieldValue.serverTimestamp(),
           });
+          
+          // 🚀 THE FIX: WAIT 5 SECONDS
+          // Since we are not using batch, this actually pauses the loop!
+          await Future.delayed(const Duration(seconds: 5)); 
         }
 
-        await batch.commit();
         itemsAdded += items.length;
-        print("✅ SUCCESS: Batch of ${items.length} $category items saved!"); 
+        print("✅ SUCCESS: Saved $category items!"); 
+        
+        // Cool down between categories
+        print("⏳ Cooling down for 5 seconds...");
+        await Future.delayed(const Duration(seconds: 5));
 
       } catch (e) {
         print("❌ ERROR in $category: $e");

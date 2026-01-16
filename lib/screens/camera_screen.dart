@@ -6,7 +6,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/ai_service.dart';
 import '../services/chat_service.dart'; 
-import '../services/shopping_list_service.dart'; // <--- IMPORT THIS
+import '../services/shopping_list_service.dart'; 
 import 'chat_screen.dart'; 
 import 'purchase_screen.dart'; 
 
@@ -33,7 +33,9 @@ class _FixItCameraState extends State<FixItCamera> {
   
   String _aiResponse = "Hi! I'm listening.";
   String _currentWords = ""; 
-  Map<String, dynamic>? _currentProduct; 
+  
+  // 🚀 CHANGED: Now handles a List of products!
+  List<Map<String, dynamic>> _products = []; 
 
   @override
   void initState() {
@@ -84,16 +86,14 @@ class _FixItCameraState extends State<FixItCamera> {
     setState(() => _isListening = false);
     await _speech.stop();
 
-    if (_currentWords.isEmpty) return;
+    if (_currentWords.isEmpty && !_isVideoOn) return; 
 
-    // Save User Message
-    ChatService.addMessage("user", _currentWords);
+    if (_currentWords.isNotEmpty) ChatService.addMessage("user", _currentWords);
 
     try {
       final aiService = AiService();
       Map<String, dynamic> result;
 
-      // Logic: Use Camera if ON and NOT PAUSED
       if (_isVideoOn && !_isPaused) {
         final image = await _controller.takePicture();
         result = await aiService.analyzeImage(image.path, _currentWords, _isMalayalam);
@@ -104,37 +104,23 @@ class _FixItCameraState extends State<FixItCamera> {
       setState(() {
         _aiResponse = result['answer'];
         
-        // CHECK 1: IS IT A SINGLE PRODUCT?
-        if (result['hasProduct'] == true) {
-          _currentProduct = result;
+        // 🚀 UPDATED LOGIC: Get the list of products
+        if (result['products'] != null) {
+          _products = List<Map<String, dynamic>>.from(result['products']);
         } else {
-          _currentProduct = null; // Clear if not a product
+          _products = [];
         }
       });
 
-      // CHECK 2: IS IT A LIST? (Comma separated)
-      if (_aiResponse.contains(',')) {
-         // Auto-add to Smart List
-         ShoppingListService().addFromAI(_aiResponse);
-         
-         // Show Visual Feedback
-         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(
-               backgroundColor: Colors.green,
-               content: Row(
-                 children: [
-                   const Icon(Icons.check_circle, color: Colors.white),
-                   const SizedBox(width: 10),
-                   Expanded(child: Text("Added to List: $_aiResponse")),
-                 ],
-               )
-             )
-           );
+      // AUTO-ADD TO SHOPPING LIST SERVICE
+      if (result['isList'] == true || result.containsKey('listItems')) {
+         // (Optional) Logic to add to internal shopping list database
+         for(var p in _products) {
+            ShoppingListService().addFromAI(p['productName']);
          }
       }
       
-      ChatService.addMessage("ai", _aiResponse, result['hasProduct'] ? result : null);
+      // Speak the answer
       _flutterTts.speak(_aiResponse);
 
     } catch (e) {
@@ -237,52 +223,79 @@ class _FixItCameraState extends State<FixItCamera> {
                   ),
                 ),
 
-                // 4. FLOATING PRODUCT BUBBLE (Single Item)
-                if (_currentProduct != null)
+                // 4. 🚀 FLOATING PRODUCT LIST (Horizontal Swipe)
+                if (_products.isNotEmpty)
                   Positioned(
-                    top: 150, left: 20, 
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PurchaseScreen(product: _currentProduct!)
-                          )
+                    top: 110, 
+                    left: 0, 
+                    right: 0,
+                    height: 190, // Increased height for list
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _products.length,
+                      itemBuilder: (context, index) {
+                        final product = _products[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 15),
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => PurchaseScreen(product: product)
+                                )
+                              );
+                            },
+                            child: Container(
+                              width: 130, // Fixed width for each card
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 8)],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: CachedNetworkImage(
+                                        imageUrl: product['productImage'],
+                                        width: double.infinity, 
+                                        fit: BoxFit.cover,
+                                        placeholder: (c,u) => Container(color: Colors.grey[200]),
+                                        errorWidget: (c,e,s) => const Icon(Icons.shopping_bag, size: 40), 
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    product['productName'], 
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    maxLines: 1, 
+                                    overflow: TextOverflow.ellipsis
+                                  ),
+                                  Text(
+                                    product['productPrice'], 
+                                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(5)),
+                                    child: const Center(
+                                      child: Text("BUY NOW", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
                         );
                       },
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(15),
-                          boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 8)],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                             ClipRRect(
-                               borderRadius: BorderRadius.circular(10),
-                               child: CachedNetworkImage(
-                                imageUrl: _currentProduct!['productImage'],
-                                 width: 80, height: 80, fit: BoxFit.cover,
-                                 errorWidget: (c,e,s) => const Icon(Icons.shopping_bag, size: 40), 
-                               ),
-                             ),
-                             const SizedBox(height: 5),
-                             Container(
-                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                               decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
-                               child: const Row(
-                                 children: [
-                                   Icon(Icons.shopping_cart, color: Colors.white, size: 10),
-                                   SizedBox(width: 4),
-                                   Text("Tap to Buy", style: TextStyle(color: Colors.white, fontSize: 10)),
-                                 ],
-                               ),
-                             )
-                          ],
-                        ),
-                      ),
                     ),
                   ),
 

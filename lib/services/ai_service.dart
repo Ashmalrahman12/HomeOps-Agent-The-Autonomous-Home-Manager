@@ -1,16 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:home_ops_agent/config/secrets.dart'; // Keep your secrets file
+import 'package:home_ops_agent/config/secrets.dart'; 
 
 class AiService {
-  final String apiKey = geminiApiKey; 
-  
+  final String apiKey = geminiApiKey;
 
-  // --- CENTRAL BRAIN FUNCTION ---
-  // This handles both Video (Image) and Chat (Text only)
   Future<Map<String, dynamic>> _generateResponse({
     String? imagePath, 
-    
     required String userQuestion, 
     required bool isMalayalam
   }) async {
@@ -21,99 +18,131 @@ class AiService {
     String lang = isMalayalam ? "Malayalam" : "English";
     String currency = "Indian Rupees (₹)";
 
-    // --- THE SMART PROMPT (HACKATHON OPTIMIZED) ---
+    // --- PROMPT WITH YOUR EXAMPLES (CONVERTED TO JSON) ---
     String systemInstruction = """
     You are an Expert Home Technician & Shopping Assistant.
     User Question: "$userQuestion"
-    
+    Language: $lang
+    Currency: $currency
+
     STRICT RULES:
-    1. Language: Reply in $lang.
-    2. Currency: ALWAYS use $currency for prices. (e.g. ₹450, not \$5).
-    
-    3. REPAIR FIRST LOGIC:
-       - If user says "broken", "not working", "repair", or "fix":
-         Your goal is to help them FIX it. Suggest a spare part (e.g., "Thermal Fuse", "Capacitor", "New Battery").
-         Only suggest a brand new product if it is unfixable.
-       - If user says "buy", "new", or "upgrade":
-         Suggest the best new replacement product.
 
-    FORMAT YOUR RESPONSE LIKE THIS:
-    [Spoken Friendly Advice] ### [Product Name] | [Price] | [ImageKeyword]
+    1. ANALYZE THE IMAGE FIRST.
+    2. If it is a **Handwritten List**, read ALL items and suggest a product for EACH.
+    3. REPAIR FIRST LOGIC: 
+       - If user says "broken/fix", suggest a spare part (fuse, battery). 
+       - Only suggest a new product if unfixable or requested.
 
-    EXAMPLES:
+    RETURN RESPONSE AS PURE JSON (No markdown):
+    {
+      "answer": "Spoken advice goes here...",
+      "isList": true/false,
+      "products": [
+        { "name": "Product Name", "price": "₹Price", "keyword": "simple image keyword" }
+      ]
+    }
+
+    EXAMPLES (LEARN FROM THESE):
+
     User: "My iron box is not working"
-    AI: It sounds like a heating element issue. You might just need a new fuse. ### Thermal Fuse for Iron Box | ₹150 | electronic fuse
+    AI: {
+      "answer": "It sounds like a heating element issue. You might just need a new fuse.",
+      "isList": false,
+      "products": [
+        { "name": "Thermal Fuse for Iron Box", "price": "₹150", "keyword": "electronic thermal fuse" }
+      ]
+    }
 
     User: "I want a new mouse"
-    AI: This Logitech mouse is excellent for work. ### Logitech M331 Silent Mouse | ₹899 | black computer mouse
-
-    (If no product is needed, just give the Spoken Answer without ###)
+    AI: {
+      "answer": "This Logitech mouse is excellent for work.",
+      "isList": false,
+      "products": [
+        { "name": "Logitech M331 Silent Mouse", "price": "₹899", "keyword": "black computer mouse" }
+      ]
+    }
+    
+    User: 
+    AI: {
+      "answer": "I found a shopping list. Here are the items.",
+      "isList": true,
+      "products": [
+        { "name": "Smartphone", "price": "₹12000", "keyword": "smartphone" },
+        { "name": "Cotton Shirt", "price": "₹800", "keyword": "blue shirt" },
+        { "name": "Running Shoes", "price": "₹2500", "keyword": "running shoes" }
+      ]
+    }
     """;
 
     try {
       GenerateContentResponse response;
       
       if (imagePath != null) {
-        // VIDEO MODE (Image + Text)
         final imageFile = File(imagePath);
         final imageBytes = await imageFile.readAsBytes();
         response = await model.generateContent([
           Content.multi([TextPart(systemInstruction), DataPart('image/jpeg', imageBytes)])
         ]);
       } else {
-        // CHAT MODE (Text Only)
         response = await model.generateContent([Content.text(systemInstruction)]);
       }
 
-      return _formatResponse(response.text ?? "");
+      return _parseJsonResponse(response.text ?? "");
     } catch (e) {
       print("AI Error: $e");
-      return {"answer": "Connection Error. Please check internet.", "hasProduct": false};
+      return {
+        "answer": "I couldn't read that. Please try again.", 
+        "hasProduct": false, 
+        "products": []
+      };
     }
   }
 
-  // --- PUBLIC METHODS CALLING THE BRAIN ---
-
-  // 1. Called by Live Video Camera
+  // --- PUBLIC METHODS ---
   Future<Map<String, dynamic>> analyzeImage(String imagePath, String userQuestion, bool isMalayalam) async {
-    return _generateResponse(
-      imagePath: imagePath, 
-      userQuestion: userQuestion, 
-      isMalayalam: isMalayalam
-    );
+    return _generateResponse(imagePath: imagePath, userQuestion: userQuestion, isMalayalam: isMalayalam);
   }
 
-  // 2. Called by Text Chat
   Future<Map<String, dynamic>> chatWithGemini(String userQuestion, bool isMalayalam) async {
-    return _generateResponse(
-      imagePath: null, // No image for text chat
-      userQuestion: userQuestion, 
-      isMalayalam: isMalayalam
-    );
+    return _generateResponse(imagePath: null, userQuestion: userQuestion, isMalayalam: isMalayalam);
   }
-  
 
-  // --- HELPER TO FORMAT DATA ---
-  Map<String, dynamic> _formatResponse(String fullText) {
-    if (fullText.contains("###")) {
-      var parts = fullText.split("###");
-      var productParts = parts[1].split("|");
+  // --- JSON PARSER & IMAGE GENERATOR ---
+  Map<String, dynamic> _parseJsonResponse(String text) {
+    try {
+      String cleanText = text.replaceAll('```json', '').replaceAll('```', '').trim();
+      Map<String, dynamic> data = jsonDecode(cleanText);
       
-      // Get the keyword for the image
-      String keyword = productParts.last.trim();
-      
-      return {
-        "answer": parts[0].trim(),
-        "hasProduct": true,
-        "productName": productParts[0].trim(),
-        "productPrice": productParts.length > 1 ? productParts[1].trim() : "Check Price",
+      List<dynamic> rawProducts = data['products'] ?? [];
+      List<Map<String, dynamic>> processedProducts = [];
+
+      for (var item in rawProducts) {
+        String keyword = item['keyword'] ?? "product";
+        String seed = DateTime.now().millisecondsSinceEpoch.toString() + keyword; 
         
-        // NEW IMAGE GENERATOR (Pollinations AI) - Works perfectly!
-        // We add 'nologo' to keep it clean and 'seed' to make it random every time.
-        "productImage": "https://image.pollinations.ai/prompt/$keyword product realistic high quality?width=400&height=400&nologo=true&seed=${DateTime.now().millisecondsSinceEpoch}"
+        processedProducts.add({
+          "productName": item['name'],
+          "productPrice": item['price'],
+          // Generates a unique image for EVERY item in the list
+          "productImage": "https://image.pollinations.ai/prompt/realistic $keyword photo isolated on white background?nologo=true&seed=$seed"
+        });
+      }
+
+      return {
+        "answer": data['answer'],
+        "hasProduct": processedProducts.isNotEmpty,
+        "isList": data['isList'] ?? false,
+        "products": processedProducts, // The full list of items
+        
+        // Single item fallback (for old code support)
+        "productName": processedProducts.isNotEmpty ? processedProducts[0]['productName'] : "",
+        "productPrice": processedProducts.isNotEmpty ? processedProducts[0]['productPrice'] : "",
+        "productImage": processedProducts.isNotEmpty ? processedProducts[0]['productImage'] : "",
       };
-    } else {
-      return {"answer": fullText, "hasProduct": false};
+
+    } catch (e) {
+      print("JSON Parse Error: $e");
+      return { "answer": text, "hasProduct": false, "products": [] };
     }
   }
 }
