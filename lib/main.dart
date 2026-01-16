@@ -1,7 +1,10 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // <--- 1. ADD THIS IMPORT
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import this
+import 'package:home_ops_agent/firebase_options.dart';
 import 'package:home_ops_agent/config/secrets.dart';
+import 'package:home_ops_agent/screens/auth_screen.dart';
 import 'package:home_ops_agent/screens/navigation_bar_page.dart';
 
 List<CameraDescription> cameras = [];
@@ -11,20 +14,16 @@ Future<void> main() async {
   
   try {
     cameras = await availableCameras();
-    
-    // <--- 2. ADD THIS LINE TO START FIREBASE
     await Firebase.initializeApp(); 
-    print("Firebase Initialized Successfully");
-    
-  } on CameraException catch (e) {
-    print('Error: $e.code\nError Message: $e.message');
   } catch (e) {
-    print("Firebase Error: $e");
+    print('Camera Error: $e');
   }
 
-  // You can keep this if you fixed the secrets file, 
-  // otherwise remember we hardcoded the key in ai_service.dart to avoid crashes.
-  await loadSecrets(); 
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  await loadSecrets();
   
   runApp(const MyApp());
 }
@@ -36,11 +35,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+      theme: ThemeData(brightness: Brightness.dark),
+      // This listener is the ONLY way to ensure the app resets for new users
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          }
+          // If snapshot has data, a user is logged in
+          if (snapshot.hasData && snapshot.data != null) {
+            return const NavigationBarPage();
+          }
+          // If no data, show Login Screen
+          return const AuthenticationScreen();
+        },
       ),
-      home: NavigationBarPage(),
     );
   }
 }
