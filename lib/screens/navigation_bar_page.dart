@@ -3,6 +3,7 @@ import 'package:home_ops_agent/main.dart';
 import 'package:home_ops_agent/screens/camera_screen.dart';
 import 'package:home_ops_agent/screens/cart_screen.dart';
 import 'package:home_ops_agent/screens/home_page.dart';
+import 'package:home_ops_agent/screens/profile_page.dart';
 import 'package:home_ops_agent/screens/shop_screen.dart';
 
 class NavigationBarPage extends StatefulWidget {
@@ -21,7 +22,7 @@ class _NavigationBarState extends State<NavigationBarPage> {
     const ShopScreen(),         // Index 1
     const SizedBox(),           // Index 2 (THE GHOST 👻)
     const CartScreen(),         // Index 3
-    const Center(child: Text("Profile Page")), // Index 4
+    const ProfilePage(), // Index 4
   ];
 
   @override
