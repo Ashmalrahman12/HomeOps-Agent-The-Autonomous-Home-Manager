@@ -76,7 +76,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         _passwordController.clear();
         
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const NavigationBarPage()),
+          MaterialPageRoute(builder: (context) =>  NavigationBarPage()),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -127,7 +127,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const NavigationBarPage()),
+          MaterialPageRoute(builder: (context) => NavigationBarPage()),
         );
       }
     } else {

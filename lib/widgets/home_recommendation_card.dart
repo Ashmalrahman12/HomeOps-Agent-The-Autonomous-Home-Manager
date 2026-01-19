@@ -8,18 +8,18 @@ class HomeRecommendationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. LISTEN TO THE SERVICE LIVE 📡
+    
     return ValueListenableBuilder<Map<String, dynamic>?>(
       valueListenable: RecommendationService().recommendationNotifier,
       builder: (context, topPick, child) {
         
-        // A. IF EMPTY (Dark Placeholder) ⚫
+    
         if (topPick == null) {
           return Container(
             height: 100,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E), // DARK GREY (Not White)
+              color: const Color(0xFF1E1E1E), 
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.white10),
             ),
@@ -36,7 +36,7 @@ class HomeRecommendationCard extends StatelessWidget {
           );
         }
 
-        // B. IF PRODUCT EXISTS (Beautiful Dark Card) ✨
+       
         return GestureDetector(
           onTap: () {
             Navigator.push(context, MaterialPageRoute(
@@ -53,7 +53,7 @@ class HomeRecommendationCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // IMAGE
+              
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15),
                   child: CachedNetworkImage(
@@ -64,7 +64,7 @@ class HomeRecommendationCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 15),
                 
-                // TEXT INFO
+              
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

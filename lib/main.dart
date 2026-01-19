@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
           }
           // If snapshot has data, a user is logged in
           if (snapshot.hasData && snapshot.data != null) {
-            return const NavigationBarPage();
+            return  NavigationBarPage();
           }
           // If no data, show Login Screen
           return const AuthenticationScreen();

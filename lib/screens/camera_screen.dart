@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+
+
+import 'package:home_ops_agent/screens/navigation_bar_page.dart'; 
+import 'package:home_ops_agent/services/cart_service.dart';
+import 'package:home_ops_agent/services/recommendation_service.dart'; 
 import '../services/ai_service.dart';
 import '../services/chat_service.dart'; 
 import '../services/shopping_list_service.dart'; 
 import 'chat_screen.dart'; 
-import 'purchase_screen.dart'; 
+
 
 class FixItCamera extends StatefulWidget {
   final CameraDescription camera;
@@ -25,7 +30,7 @@ class _FixItCameraState extends State<FixItCamera> {
   final FlutterTts _flutterTts = FlutterTts();
   final stt.SpeechToText _speech = stt.SpeechToText();
   
-  // --- STATE VARIABLES ---
+ 
   bool _isListening = false;
   bool _isVideoOn = false; 
   bool _isPaused = false;  
@@ -34,7 +39,6 @@ class _FixItCameraState extends State<FixItCamera> {
   String _aiResponse = "Hi! I'm listening.";
   String _currentWords = ""; 
   
-  // 🚀 CHANGED: Now handles a List of products!
   List<Map<String, dynamic>> _products = []; 
 
   @override
@@ -57,7 +61,7 @@ class _FixItCameraState extends State<FixItCamera> {
     super.dispose();
   }
 
-  // --- 1. TOGGLE MIC ---
+
   void _toggleMic() async {
     if (_isListening) {
       _stopListeningAndSend();
@@ -81,7 +85,7 @@ class _FixItCameraState extends State<FixItCamera> {
     }
   }
 
-  // --- 2. SEND TO AI (UPDATED FOR LISTS) ---
+ 
   void _stopListeningAndSend() async {
     setState(() => _isListening = false);
     await _speech.stop();
@@ -104,23 +108,33 @@ class _FixItCameraState extends State<FixItCamera> {
       setState(() {
         _aiResponse = result['answer'];
         
-        // 🚀 UPDATED LOGIC: Get the list of products
+      
         if (result['products'] != null) {
           _products = List<Map<String, dynamic>>.from(result['products']);
+          
+       
+          if (_products.isNotEmpty) {
+             RecommendationService().setRecommendation(_products.first);
+             print("✅ Home Page Updated with: ${_products.first['productName']}");
+          }
+
         } else {
           _products = [];
         }
       });
 
-      // AUTO-ADD TO SHOPPING LIST SERVICE
-      if (result['isList'] == true || result.containsKey('listItems')) {
-         // (Optional) Logic to add to internal shopping list database
+      if (_products.isNotEmpty) {
          for(var p in _products) {
             ShoppingListService().addFromAI(p['productName']);
          }
+         
+     
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text("Added ${_products.length} items to Shopping List"), backgroundColor: Colors.green, duration: const Duration(seconds: 1))
+         );
       }
       
-      // Speak the answer
+   
       _flutterTts.speak(_aiResponse);
 
     } catch (e) {
@@ -128,7 +142,7 @@ class _FixItCameraState extends State<FixItCamera> {
     }
   }
 
-  // --- 3. PAUSE VIDEO LOGIC ---
+  
   void _togglePause() {
     setState(() {
       _isPaused = !_isPaused;
@@ -168,7 +182,6 @@ class _FixItCameraState extends State<FixItCamera> {
                     ),
                   ),
 
-                // 2. GRADIENT OVERLAY
                 if (_isVideoOn)
                   Container(
                     decoration: const BoxDecoration(
@@ -180,7 +193,7 @@ class _FixItCameraState extends State<FixItCamera> {
                     ),
                   ),
 
-                // 3. TOP BAR
+                
                 Positioned(
                   top: 50, left: 20, right: 20,
                   child: Row(
@@ -223,13 +236,13 @@ class _FixItCameraState extends State<FixItCamera> {
                   ),
                 ),
 
-                // 4. 🚀 FLOATING PRODUCT LIST (Horizontal Swipe)
+             
                 if (_products.isNotEmpty)
                   Positioned(
                     top: 110, 
                     left: 0, 
                     right: 0,
-                    height: 190, // Increased height for list
+                    height: 190, 
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       scrollDirection: Axis.horizontal,
@@ -240,15 +253,24 @@ class _FixItCameraState extends State<FixItCamera> {
                           padding: const EdgeInsets.only(right: 15),
                           child: GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => PurchaseScreen(product: product)
+                              // A. Add to Cart Service
+                              CartService.addItem(product);
+                              
+                              // B. Show Feedback
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("${product['productName']} added to Cart!"),
+                                  duration: const Duration(seconds: 1),
+                                  backgroundColor: Colors.green,
                                 )
                               );
+
+                              // C. Navigate to Cart (Index 3)
+                              Navigator.pop(context); // Close Camera
+                              navBarKey.currentState?.changeTab(3); // Go to Cart Tab
                             },
                             child: Container(
-                              width: 130, // Fixed width for each card
+                              width: 130, 
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -348,10 +370,10 @@ class _FixItCameraState extends State<FixItCamera> {
                         // A. VIDEO TOGGLE
                         GestureDetector(
                           onTap: () {
-                              setState(() {
-                                _isVideoOn = !_isVideoOn;
-                                if(!_isVideoOn) _isPaused = false; 
-                              });
+                             setState(() {
+                               _isVideoOn = !_isVideoOn;
+                               if(!_isVideoOn) _isPaused = false; 
+                             });
                            },
                            child: CircleAvatar(
                              radius: 25,

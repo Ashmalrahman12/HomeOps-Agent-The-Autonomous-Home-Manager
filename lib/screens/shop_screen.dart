@@ -14,9 +14,6 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   
-  // ---------------------------------------------------
-  // 1. AUTO-START GENERATOR 🚀
-  // ---------------------------------------------------
   @override
   void initState() {
     super.initState();
@@ -39,9 +36,7 @@ class _ShopScreenState extends State<ShopScreen> {
     });
   }
 
-  // ---------------------------------------------------
-  // 2. REFRESH LOGIC
-  // ---------------------------------------------------
+  
   Future<void> _handleRefresh() async {
     int count = await ProductGenerator.generateNewBatch();
     if (mounted) {
@@ -51,9 +46,6 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-  // ---------------------------------------------------
-  // 3. PRODUCT CARD (Google Style)
-  // ---------------------------------------------------
   Widget _buildGoogleCard(Map<String, dynamic> item) {
     bool isAiPick = item['isAi'] == true;
 
@@ -160,9 +152,6 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  // ---------------------------------------------------
-  // 4. CATEGORY ROW BUILDER
-  // ---------------------------------------------------
   Widget _buildCategoryRow(String title, List<Map<String, dynamic>> items) {
     if (items.isEmpty) return const SizedBox.shrink();
 
@@ -234,7 +223,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       final data = doc.data() as Map<String, dynamic>;
                       String cat = (data['category'] ?? "").toString().toLowerCase();
                       
-                      // 🚀 CLEAN LOGIC: Use the database URL, or a simple placeholder if missing.
+                   
                       String imgUrl = data['image_url'] ?? "";
                       if (imgUrl.isEmpty) {
                         imgUrl = "https://via.placeholder.com/150?text=No+Image"; 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:home_ops_agent/main.dart';
 import 'package:home_ops_agent/screens/camera_screen.dart';
 import 'package:home_ops_agent/screens/smart_list_screen.dart';
+import 'package:home_ops_agent/services/blockchain_service.dart';
 
 class CategoryGrid extends StatelessWidget {
   const CategoryGrid({super.key});
@@ -97,9 +98,7 @@ void _showBillingDialog(BuildContext context) {
                 children: [
                   const Text("Billing & Payments", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
-                  
-                  // FIX 2: Flexible + ListView prevents internal vertical overflow
-                  Flexible(
+              Flexible(
                     child: ListView(
                       shrinkWrap: true,
                       children: [
@@ -122,16 +121,54 @@ void _showBillingDialog(BuildContext context) {
                                       style: TextStyle(color: _isBillPaid ? Colors.green : Colors.redAccent, fontWeight: FontWeight.bold)),
                                 ],
                               ),
-                              _isBillPaid
+                         _isBillPaid
                                   ? const Icon(Icons.check_circle, color: Colors.green, size: 30)
-                                  : ElevatedButton(
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                                      onPressed: () {
-                                        setModalState(() => _isBillPaid = true);
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Bill Paid Successfully! ₹850")));
-                                      },
-                                      child: const Text("Pay ₹850", style: TextStyle(color: Colors.white)),
-                                    ),
+                                  : ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF2E5CFF), // Circle Blue
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      icon: const Icon(Icons.currency_bitcoin, size: 16),
+                                      label: const Text("Pay with USDC"),
+                                      onPressed: () async {
+                                        // A. Show Loading
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("Verifying Wallet Balance... 🔗"),
+                                            backgroundColor: Colors.blueAccent,
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+
+                                        // B. Call Blockchain Service (Check for 0.01 USDC)
+                                        bool success = await BlockchainService().verifyPayment(0.01);
+
+                                        if (success) {
+                                          // C. Success Logic
+                                          setModalState(() => _isBillPaid = true);
+                                          
+                                          if(context.mounted) {
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text("✅ Bill Paid on Blockchain!"),
+                                                backgroundColor: Colors.green,
+                                              ),
+                                            );
+                                          }
+                                        } else {
+                                          // D. Failure Logic
+                                          if(context.mounted) {
+                                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text("❌ Insufficient Funds. Use Faucet!"),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },)
                             ],
                           ),
                         ),
