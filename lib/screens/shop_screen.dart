@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/scheduler.dart'; 
+import 'package:flutter/scheduler.dart';
+import 'package:home_ops_agent/screens/navigation_bar_page.dart';
+import 'package:home_ops_agent/services/cart_service.dart'; 
 
 import 'purchase_screen.dart';
 import '../services/product_generator.dart'; 
@@ -108,7 +110,7 @@ class _ShopScreenState extends State<ShopScreen> {
               ],
             ),
             
-            // DETAILS SECTION
+        
             Padding(
               padding: const EdgeInsets.all(10.0),
               child: Column(
@@ -139,12 +141,16 @@ class _ShopScreenState extends State<ShopScreen> {
             // ADD TO CART BUTTON
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 10),
+             
               decoration: const BoxDecoration(
                 color: Color(0xFFE0E0E0), 
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(15)),
               ),
-              child: const Icon(Icons.add_shopping_cart, color: Colors.black, size: 20),
+              child:  IconButton(icon: Icon(Icons.add_shopping_cart), color: Colors.black,
+               onPressed: () {
+                 navBarKey.currentState?.changeTab(3);
+                 CartService.addItem(item);
+                 },),
             ),
           ],
         ),

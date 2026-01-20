@@ -39,7 +39,9 @@ class ProductGenerator {
         final prompt = '''
           Generate 5 realistic e-commerce products for category: "$category".
           Return ONLY a JSON list.
-          Fields: name, price (e.g. ₹500), rating (3.5-5.0), category (use lower case keyword).
+          1. Price MUST be in Indian Rupees (Symbol: ₹).
+          2. Prices must be realistic for the Indian Market (e.g. Milk is ₹30, Laptop is ₹45000).
+          3. Fields: name, price (String like "₹500"), rating (3.5-5.0), category (use lower case keyword).
         ''';
 
         final content = [Content.text(prompt)];
@@ -76,8 +78,8 @@ class ProductGenerator {
             "timestamp": FieldValue.serverTimestamp(),
           });
           
-          // 🚀 THE FIX: WAIT 5 SECONDS
-          // Since we are not using batch, this actually pauses the loop!
+          
+       
           await Future.delayed(const Duration(seconds: 5)); 
         }
 

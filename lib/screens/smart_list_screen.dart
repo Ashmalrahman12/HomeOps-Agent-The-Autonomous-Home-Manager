@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:home_ops_agent/screens/navigation_bar_page.dart';
 import 'package:home_ops_agent/services/shopping_list_service.dart';
 import 'shop_screen.dart'; // To navigate to cart/shop
 
@@ -96,7 +97,7 @@ class _SmartListScreenState extends State<SmartListScreen> {
                   secondary: IconButton(
                     icon: const Icon(Icons.search, color: Colors.blueAccent),
                     onPressed: () {
-                      // MAGIC FEATURE: Click search to find this item in your Shop!
+                    navBarKey.currentState?.changeTab(2); 
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ShopScreen()));
                     },
                   ),

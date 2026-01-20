@@ -1,11 +1,14 @@
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:home_ops_agent/screens/navigation_bar_page.dart';
+import 'package:home_ops_agent/services/cart_service.dart';
 import 'package:image_picker/image_picker.dart'; 
 import 'package:home_ops_agent/services/shopping_list_service.dart';
-import 'package:home_ops_agent/services/recommendation_service.dart'; // <--- 1. IMPORT THIS
+import 'package:home_ops_agent/services/recommendation_service.dart'; 
 import '../services/chat_service.dart';
 import '../services/ai_service.dart';
-import '../widgets/chat_product_card.dart'; 
+
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -110,6 +113,16 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     });
   }
+  @override
+void initState() {
+  super.initState();
+  // Scroll to bottom after the widget builds
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +187,7 @@ class _ChatScreenState extends State<ChatScreen> {
       
         if (hasProducts) 
           Container(
-            height: 260, // Fixed height for the card carousel
+            height: 260, 
             margin: const EdgeInsets.only(top: 10, bottom: 10),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
@@ -182,8 +195,72 @@ class _ChatScreenState extends State<ChatScreen> {
               itemBuilder: (context, pIndex) {
                 return Padding(
                   padding: const EdgeInsets.only(right: 10),
-                  // Reuse your existing ChatProductCard widget
-                  child: ChatProductCard(product: productList[pIndex]),
+              
+                  child: GestureDetector(
+                            onTap: () {
+                              // A. Add to Cart Service
+                              CartService.addItem(  productList[pIndex]);
+                              
+                              // B. Show Feedback
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("${productList[pIndex]['productName']} added to Cart!"),
+                                  duration: const Duration(seconds: 1),
+                                  backgroundColor: Colors.green,
+                                )
+                              );
+
+                              // C. Navigate to Cart (Index 3)
+                              Navigator.pop(context); // Close Camera
+                              navBarKey.currentState?.changeTab(3); 
+                            },
+                            child: Container(
+                              width: 130, 
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 8)],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: CachedNetworkImage(
+                                        imageUrl: productList[pIndex]['productImage'],
+                                        width: double.infinity, 
+                                        fit: BoxFit.cover,
+                                        placeholder: (c,u) => Container(color: Colors.grey[200]),
+                                        errorWidget: (c,e,s) => const Icon(Icons.shopping_bag, size: 40), 
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    productList[pIndex]['productName'], 
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                    maxLines: 1, 
+                                    overflow: TextOverflow.ellipsis
+                                  ),
+                                  Text(
+                                    productList[pIndex]['productPrice'], 
+                                    style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)
+                                  ),
+                                  const SizedBox(height: 5),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(vertical: 4),
+                                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(5)),
+                                    child: const Center(
+                                      child: Text("BUY NOW", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
                 );
               },
             ),

@@ -27,9 +27,13 @@ class CartService {
 
   static void addItem(Map<String, dynamic> product) {
     _items.add(CartItem(
-      name: product['productName'] ?? "Unknown",
-      price: product['productPrice'] ?? "₹0",
-      imageUrl: product['productImage'] ?? "",
+     name: product['name'] ?? product['productName'] ?? "Unknown Item",
+      
+      price: product['price'] ?? product['productPrice'] ?? "₹0",
+      
+     
+      imageUrl: product['image'] ?? product['productImage'] ?? "",
+      
       details: product['category'] ?? "General Item",
     ));
   }
@@ -45,7 +49,7 @@ class CartService {
     for (var item in _items) {
       if (item.isSelected) {
    
-        String cleanPrice = item.price.replaceAll('₹', '').replaceAll(',', '').trim();
+        String cleanPrice = item.price.replaceAll(RegExp(r'[^0-9.]'), '');
         total += (double.tryParse(cleanPrice) ?? 0) * item.quantity;
       }
     }
