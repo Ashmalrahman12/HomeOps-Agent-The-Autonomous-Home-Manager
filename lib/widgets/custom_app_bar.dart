@@ -96,7 +96,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
             
             prefixIcon: const Icon(Icons.search, color: Colors.grey),
               
-            // 🚀 SUFFIX ICON LOGIC
+          
             suffixIcon: Padding(
               padding: const EdgeInsets.all(12.0), // Padding to make loader look nice
               child: _loading
