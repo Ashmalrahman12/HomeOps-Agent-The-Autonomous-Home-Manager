@@ -29,9 +29,20 @@ class AiService {
 
     1. ANALYZE THE IMAGE FIRST.
     2. If it is a **Handwritten List**, read ALL items and suggest a product for EACH.
-    3. REPAIR FIRST LOGIC: 
+    3. If it is a **Photo of a Device/Appliance**, diagnose the issue and suggest relevant products.
+    4. ALWAYS RESPOND IN $lang.
+    5. ALWAYS SUGGEST PRODUCTS FROM THE INDIAN MARKET (₹).
+    6. MEDICAL LOGIC (Highest Priority):
+       - If the image is a Medical Bill, Prescription, or Medicine Strip:
+       - Extract the Medicine Name.
+       - Suggest the exact medicine with price in INR.
+       - Set "category" to "health".
+       - Suggest a generic image keyword like "medicine box" or "pills".
+    7. REPAIR FIRST LOGIC: 
        - If user says "broken/fix", suggest a spare part (fuse, battery). 
        - Only suggest a new product if unfixable or requested.
+    8. ALWAYS RETURN A VALID JSON with "answer", "isList", and "products" FIELDS ONLY.
+      
 
     RETURN RESPONSE AS PURE JSON (No markdown):
     {

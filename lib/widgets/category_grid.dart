@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:home_ops_agent/main.dart';
 import 'package:home_ops_agent/screens/camera_screen.dart';
+import 'package:home_ops_agent/screens/health_hub_screen.dart';
 import 'package:home_ops_agent/screens/smart_list_screen.dart';
 import 'package:home_ops_agent/services/blockchain_service.dart';
 
@@ -34,7 +35,7 @@ class CategoryGrid extends StatelessWidget {
               Icons.monitor_heart, 
               "Health", 
               Colors.teal, 
-              () => _showHealthChecklist(context)),
+              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HealthHubScreen()))),
           _buildQuickAction(
               context, 
               Icons.smart_toy, 
@@ -76,7 +77,7 @@ Widget _buildQuickAction(BuildContext context, IconData icon, String label, Colo
 
 bool _isBillPaid = false;
 
-// 2. BILLING POPUP (FIXED: Flexible and Scrollable)
+// 2. BILLING POPUP (FIXED: Vertical Scroll)
 void _showBillingDialog(BuildContext context) {
   showModalBottomSheet(
     context: context,
@@ -208,76 +209,8 @@ Widget _buildOrderItem(String name, String price, String status) {
   );
 }
 
-// 3. HEALTH POPUP (FIXED: Vertical Scroll)
-void _showHealthChecklist(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: const Color(0xFF1E1E1E),
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-    builder: (context) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Family Health Hub", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 5),
-            const Text("Manage prescriptions & checkups", style: TextStyle(color: Colors.grey)),
-            const SizedBox(height: 20),
-            Flexible(
-              child: ListView(
-                shrinkWrap: true,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(15),
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.blueAccent),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.document_scanner, color: Colors.blueAccent, size: 30),
-                        const SizedBox(width: 15),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("Upload Prescription", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            Text("AI will auto-order medicines", style: TextStyle(color: Colors.white70, fontSize: 12)),
-                          ],
-                        ),
-                        const Spacer(),
-                        IconButton(icon: const Icon(Icons.arrow_forward, color: Colors.white), onPressed: () {})
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text("Family Vitals", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  _buildHealthItem("Father", "BP: 120/80 (Normal)", Icons.favorite, Colors.redAccent),
-                  _buildHealthItem("Grandma", "Sugar: 140 mg/dL (High)", Icons.water_drop, Colors.orange),
-                  _buildHealthItem("Baby", "Vaccination Due: Jan 20", Icons.child_care, Colors.blue),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
 
-Widget _buildHealthItem(String name, String status, IconData icon, Color color) {
-  return ListTile(
-    contentPadding: EdgeInsets.zero,
-    leading: CircleAvatar(backgroundColor: color.withValues(alpha: 0.2), child: Icon(icon, color: color, size: 20)),
-    title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-    subtitle: Text(status, style: const TextStyle(color: Colors.grey)),
-    trailing: const Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 14),
-  );
-}
+
 
 // 4. SMART POPUP (FIXED: Vertical Scroll)
 void _showSmartDevices(BuildContext context) {
