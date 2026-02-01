@@ -1,16 +1,24 @@
-# home_ops_agent
+# HomeOps Agent - Autonomous Home Manager
+> Built for Agentic Commerce on Arc Hackathon
 
-A new Flutter project.
+## ⚙️ Tech Stack
+- **Frontend:** Flutter (Mobile)
+- **AI:** Google Gemini 2.5 Flash (Vision & Reasoning)   
 
-## Getting Started
+- **Blockchain:** Arc Network (USDC Payments)
+- **Backend:** Firebase
 
-This project is a starting point for a Flutter application.
+## 🚀 How to Run
+1. Clone the repo.
+2. Create `secrets.json` in assets. Copy and Paste this 
+   
+   {
+    "geminiAPiKey" : "Paste Gemini API here",
+    "blockchainApiKey": "Paste your Cricle Sand API here"
+}
+   
+4. Run `flutter run`.
+   
+ <img width="402" height="827" alt="image" src="https://github.com/user-attachments/assets/575cba0a-bd7d-4e4c-b9ee-51bd126b2d9e" />
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+ <img width="411" height="819" alt="image" src="https://github.com/user-attachments/assets/e9f66c32-ddbd-4226-bbac-b1b8c1f600d0" />
